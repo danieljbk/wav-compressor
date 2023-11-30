@@ -11,8 +11,6 @@ import sys
 
 # Third-Party Imports
 from pydub import AudioSegment
-from tqdm import tqdm
-
 
 # Constants
 BITS_PER_BYTE = 8

@@ -3,62 +3,87 @@
 
 ## Overview
 
-`wav_compressor.py` is a Python script for compressing WAV audio files to a specific target size in megabytes. It is designed to iterate over all WAV files in a given directory, calculate the optimal frame rate for compression, and adjust the sample rate of each file to reach the desired file size. This tool aims to reduce the file size effectively while maintaining a balance between space efficiency and audio quality.
+The WAV Compressor is a Python tool for reducing the size of WAV audio files. It achieves this by adjusting the sample rate of the files, aiming to compress them to a specific size in megabytes (MB).
 
 ## Features
 
-- **Automated File Processing**: Processes all WAV files in a given directory.
-- **Dynamic Frame Rate Calculation**: Calculates the new frame rate to meet the target size.
-- **Size Control**: Compresses files to a specified target size in megabytes.
-- **Enhanced Modularity and Readability**: Refactored to follow industry standards and best practices for Python code.
+- **Sample Rate Adjustment**: Modifies the sample rate to reduce file size.
+- **Multiprocessing**: Uses Python's `multiprocessing` for faster processing.
+- **Logging**: Provides basic logging for tracking the compression process.
+- **Command-Line Interface**: Allows users to specify the directory and target file size via command line.
 
-## Prerequisites
+## Prerequisites and Installation
 
-Ensure you have the following installed:
+To set up the WAV Compressor, follow these steps:
 
-- **Python**: Required for running the script.
-- **FFmpeg**: Used by Pydub for audio processing. Installation for Mac using Homebrew:
+1. **Python 3.x**: Required to run the tool. [Download Python 3.x](https://www.python.org/downloads/).
 
-  ```bash
-  brew install ffmpeg
-  ```
+2. **FFmpeg**: Necessary for audio file processing. Install FFmpeg on macOS with:
 
-## Installation
+   ```bash
+   brew install ffmpeg
+   ```
 
-1. Clone or download the repository to your local machine.
-2. Navigate to the script directory.
-3. Install the required Python libraries. A `requirements.txt` file is provided for easy installation of dependencies. Run the following command:
+   On other systems, follow the respective installation instructions.
+
+3. **Setup**: Download or clone the WAV Compressor repository.
+
+4. **Install Dependencies**: In the tool's folder, run:
 
    ```bash
    pip install -r requirements.txt
    ```
 
+   to install the necessary Python packages.
+
 ## Usage
 
-1. Place your WAV files in a specified directory.
-2. Run the script from the command line, specifying the path to the directory containing the WAV files and the target size in MB. For example:
+Run the script in the command line, specifying the directory of WAV files and the target size in megabytes:
 
-   ```bash
-   python wav_compressor.py /path/to/directory 100
-   ```
+```bash
+python wav_compressor.py <directory_path> <target_size_mb>
+```
 
-   This command will process all WAV files in the specified directory, compressing them to a target size of 100 MB each.
+Example:
 
-## Important Notes
+```bash
+python wav_compressor.py /path/to/wav/files 5
+```
 
-- **File Format**: Supports WAV files for input and outputs the compressed files in WAV format.
-- **Backup Your Files**: Keep a backup of your original files.
-- **Quality vs. Size**: As the compression changes the frame rate, there may be a trade-off between audio quality and file size.
-- **Error Handling**: Includes error handling for common issues, but ensure correct file paths and formats are used.
+## Command-Line Arguments
 
-## Customization
+- `directory_path`: The directory with WAV files.
+- `target_size_mb`: Desired size for the compressed files in megabytes.
 
-The script can be customized for different target sizes or modified for other audio formats. Adjust the script parameters as needed.
+## Functionality
+
+- `main()`: Starts the compression process.
+- `compress_audio_file()`: Handles the compression of each WAV file.
+- `calculate_file_size_in_kb()`: Computes the initial size of the file.
+- `calculate_new_frame_rate()`: Determines the new frame rate for the target file size.
+
+## Logging and Multiprocessing
+
+- Basic logging setup to monitor the process.
+- Multiprocessing to handle multiple files simultaneously.
+
+## Error Handling
+
+Includes basic error handling to catch and log issues during compression.
+
+## Output
+
+Compressed files are saved in a `Compressed_WAVs` folder in the specified directory.
+
+## Limitations
+
+- Only supports WAV files.
+- Compression is done by changing the sample rate, which may affect sound quality.
 
 ## License
 
-This tool is open-source and free to use. Feel free to modify and distribute it according to your needs.
+This is an open-source tool, free for personal and commercial use.
 
----
+## Contributions
 
-For any issues or suggestions regarding the tool, please feel free to open an issue in the repository or submit a pull request with your changes.
+Feel free to contribute or suggest improvements via the project's repository.
