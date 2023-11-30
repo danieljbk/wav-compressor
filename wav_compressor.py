@@ -1,9 +1,18 @@
+# Standard Library Imports
 import argparse
 import glob
 import logging
+import logging.handlers
+import multiprocessing
+from multiprocessing import Manager
 import os
+import queue
+import sys
+
+# Third-Party Imports
 from pydub import AudioSegment
 from tqdm import tqdm
+
 
 # Constants
 BITS_PER_BYTE = 8
@@ -18,6 +27,49 @@ def configure_logging():
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
+
+
+def listener_configurer():
+    """Configure the listener for logging."""
+    root = logging.getLogger()
+    h = logging.StreamHandler()
+    f = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    h.setFormatter(f)
+    root.addHandler(h)
+
+
+def listener_process(queue):
+    """Process that listens for logging messages."""
+    listener_configurer()
+    while True:
+        try:
+            record = queue.get()
+            if record is None:
+                # A None record indicates to terminate
+                break
+            logger = logging.getLogger(record.name)
+            logger.handle(record)
+            # Explicitly flush the logs
+            sys.stdout.flush()
+        except Exception:
+            import sys, traceback
+
+            print("Whoops! Problem:", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+
+
+def worker_configurer(queue):
+    """Configure logging for each worker process."""
+    h = logging.handlers.QueueHandler(queue)
+    root = logging.getLogger()
+    root.addHandler(h)
+    root.setLevel(logging.INFO)
+
+
+def compress_audio_worker(arguments):
+    file_path, output_directory, target_size_mb, log_queue = arguments
+    worker_configurer(log_queue)
+    compress_audio_file(file_path, output_directory, target_size_mb)
 
 
 def calculate_file_size_in_kb(
@@ -84,25 +136,43 @@ def setup_arg_parser() -> argparse.ArgumentParser:
 def main():
     """Main function to process WAV files in the specified directory."""
     configure_logging()
+    logging.info("Starting the audio compression application...")
 
     parser = setup_arg_parser()
     args = parser.parse_args()
 
     output_directory = os.path.join(args.directory_path, "Compressed_WAVs")
     os.makedirs(output_directory, exist_ok=True)
+    logging.info(f"Output directory created at {output_directory}")
 
     wav_files = [
         f
         for f in glob.glob(os.path.join(args.directory_path, "*.wav"))
         if f.lower().endswith(".wav")
     ]
+    logging.info(f"Found {len(wav_files)} WAV files for processing.")
 
-    with tqdm(
-        total=len(wav_files), desc="Processing WAV files", unit="file", ncols=100
-    ) as progress_bar:
-        for file_path in wav_files:
-            compress_audio_file(file_path, output_directory, args.target_size_mb)
-            progress_bar.update(1)
+    with Manager() as manager:
+        log_queue = manager.Queue(-1)
+        listener = multiprocessing.Process(target=listener_process, args=(log_queue,))
+        listener.start()  # Start listener before processing
+
+        # Setting up multiprocessing pool
+        with multiprocessing.Pool() as pool:
+            logging.info("Starting the multiprocessing pool for audio compression.")
+            pool.map(
+                compress_audio_worker,
+                [
+                    (file_path, output_directory, args.target_size_mb, log_queue)
+                    for file_path in wav_files
+                ],
+            )
+
+        # Clean up
+        log_queue.put_nowait(None)
+        listener.join()
+
+        logging.info("Audio compression completed.")
 
 
 if __name__ == "__main__":
